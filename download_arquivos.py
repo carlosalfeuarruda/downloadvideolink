@@ -5,17 +5,22 @@ from tqdm import tqdm
 from urllib.parse import urlparse
 from openpyxl import Workbook
 
-def download_file(url, filename):
+def download_file(url, filename, folder):
     try:
         # Verifica se a pasta 'downloads' existe e cria se não existir
         if not os.path.exists('downloads'):
             os.makedirs('downloads')
 
+        # Verifica se a pasta do ambiente existe e cria se não existir
+        folder_path = os.path.join('downloads', folder)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
         # Extrai a extensão do nome do arquivo na URL
         filename_extension = os.path.splitext(urlparse(url).path)[-1]
 
         # Junta o diretório 'downloads' com o nome do arquivo e sua extensão
-        filepath = os.path.join('downloads', filename + filename_extension)
+        filepath = os.path.join(folder_path, filename + filename_extension)
 
         # Verifica se o arquivo já existe na pasta 'downloads'
         if os.path.exists(filepath):
@@ -53,11 +58,12 @@ def create_report(downloads):
     ws = wb.active
 
     # Adiciona cabeçalhos à planilha
-    ws.append(['URL', 'Nome do Arquivo', 'Status'])
+    ws.append(['URL', 'Nome do Arquivo', 'Ambiente', 'Status'])
 
     # Adiciona dados à planilha
     for download in downloads:
-        ws.append(download)
+        url, filename, ambiente, status = download  # Desempacota a lista
+        ws.append([url, filename, ambiente, status])
 
     # Salva o arquivo Excel
     wb.save('relatorio_downloads.xlsx')
@@ -68,15 +74,16 @@ def main():
     # Nome do arquivo CSV
     csv_file = 'links.csv'
 
-    # Abrindo o arquivo CSV e lendo os links e nomes de arquivo
+    # Abrindo o arquivo CSV e lendo os links, nomes de arquivo e ambientes
     with open(csv_file, 'r', newline='') as file:
         reader = csv.reader(file, delimiter=';')  # Define o ponto e vírgula como delimitador
         next(reader)  # Pula o cabeçalho, se houver
         for row in reader:
             url = row[0]  # Link de download
             filename = row[1]  # Nome do arquivo
-            status = download_file(url, filename)
-            downloads.append([url, filename, status])
+            ambiente = row[2]  # Ambiente
+            status = download_file(url, filename, ambiente)
+            downloads.append([url, filename, ambiente, status])
 
     # Cria o relatório em Excel
     create_report(downloads)
