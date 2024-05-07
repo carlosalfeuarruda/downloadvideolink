@@ -4,6 +4,7 @@ import requests
 from tqdm import tqdm
 from urllib.parse import urlparse
 from openpyxl import Workbook
+import pandas as pd
 
 def download_file(url, filename, folder):
     try:
@@ -41,6 +42,9 @@ def download_file(url, filename, folder):
 
         progress_bar.close()
 
+        # Retorna o tamanho do arquivo baixado
+        return 'OK', os.path.getsize(filepath)
+
         if total_size != 0 and progress_bar.n != total_size:
             print("Erro ao fazer o download completo do arquivo.")
             return 'Erro'
@@ -69,24 +73,22 @@ def create_report(downloads):
     wb.save('relatorio_downloads.xlsx')
 
 def main():
-    downloads = []
-
     # Nome do arquivo CSV
     csv_file = 'links.csv'
 
     # Abrindo o arquivo CSV e lendo os links, nomes de arquivo e ambientes
-    with open(csv_file, 'r', newline='') as file:
-        reader = csv.reader(file, delimiter=';')  # Define o ponto e vírgula como delimitador
-        next(reader)  # Pula o cabeçalho, se houver
-        for row in reader:
-            url = row[0]  # Link de download
-            filename = row[1]  # Nome do arquivo
-            ambiente = row[2]  # Ambiente
-            status = download_file(url, filename, ambiente)
-            downloads.append([url, filename, ambiente, status])
+    df = pd.read_csv(csv_file, delimiter=';')
 
-    # Cria o relatório em Excel
-    create_report(downloads)
+    # Atualiza o arquivo links.csv com o tamanho do arquivo
+    for index, row in df.iterrows():
+        url = row['URL']  # Link de download
+        filename = row['Nome do Arquivo']  # Nome do arquivo
+        folder = row['Ambiente']  # Pasta onde o arquivo deve ser salvo
+        status, size = download_file(url, filename, folder)
+        df.at[index, 'Tamanho'] = size if status == 'OK' else 0
+
+    # Salva o arquivo CSV atualizado
+    df.to_csv(csv_file, sep=';', index=False)
 
 if __name__ == "__main__":
     main()
