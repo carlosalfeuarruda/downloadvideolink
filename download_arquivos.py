@@ -22,12 +22,12 @@ def download_file(url, filename):
             print(f"O arquivo {filename} já existe na pasta 'downloads'. Pulando o download.")
             return 'OK'
 
+        print(f"\nSalvando arquivo como: {filepath}")
+
         response = requests.get(url, stream=True)
         total_size = int(response.headers.get('content-length', 0))
         block_size = 1024  # 1 Kibibyte
         progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True)
-
-        print(f"Salvando arquivo como: {filepath}")
 
         with open(filepath, 'wb') as f:
             for data in response.iter_content(block_size):
